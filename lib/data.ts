@@ -63,17 +63,24 @@ export interface LeaderboardRow {
   count: number;
 }
 
-/** 全體學生課程數（修課表 ∪ 必修，且存在於最新課表中）排行榜 */
+/** 實體課程：有地點且非線上教室 */
+function isPhysicalCourse(c: CourseEntry): boolean {
+  return Boolean(c.location) && !c.location.includes("線上");
+}
+
+/** 全體學生「實體課程數」排行榜（修課表 ∪ 必修，且存在於最新課表中） */
 export async function buildLeaderboard(): Promise<LeaderboardRow[]> {
   const students = await loadStudents();
   const latest = await loadLatestSchedule();
-  const known = new Set(latest.map((c) => c.course_name));
+  const physicalNames = new Set(
+    latest.filter(isPhysicalCourse).map((c) => c.course_name),
+  );
   return Object.entries(students)
     .map(([id, s]) => ({
       id,
       name: s.name,
       count: [...wantedCourseNames(s.class)].filter((c) =>
-        known.has(c),
+        physicalNames.has(c),
       ).length,
     }))
     .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));

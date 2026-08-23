@@ -88,7 +88,7 @@ export function LeaderboardModal({
                     color: `var(--tone-${tone}-text)`,
                   }}
                 >
-                  {row.count} 門課程
+                  {row.count} 門實體課程
                 </span>
               </li>
             );

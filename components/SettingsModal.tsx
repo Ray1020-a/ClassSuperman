@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Apple,
   CalendarPlus,
@@ -56,10 +56,27 @@ export function SettingsModal({
     };
   }, [open]);
 
-  const httpsUrl = uuid ? `${window.location.origin}/${uuid}` : null;
-  const webcalUrl = uuid
-    ? `${window.location.origin.replace(/^https?:/, "webcal")}/${uuid}`
-    : null;
+  // 以 URL 物件明確組出訂閱連結，避免字串取代產生錯誤格式
+  const feedUrl = useMemo(() => {
+    if (!uuid || typeof window === "undefined") return null;
+    return new URL(`/${uuid}`, window.location.origin).toString();
+  }, [uuid]);
+
+  const gcalAddUrl = useMemo(() => {
+    if (!feedUrl) return null;
+    // Google Calendar 的 cid 參數：feed 網址的 base64（URL-safe）
+    const b64 = btoa(feedUrl)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    return `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(b64)}`;
+  }, [feedUrl]);
+
+  const webcalUrl = useMemo(() => {
+    if (!feedUrl) return null;
+    const u = new URL(feedUrl);
+    return `webcal://${u.host}${u.pathname}`;
+  }, [feedUrl]);
 
   const copy = async (text: string) => {
     try {
@@ -108,14 +125,14 @@ export function SettingsModal({
             <div className="rounded-xl border-2 border-foreground bg-[var(--tone-rose-card)] p-4 text-sm font-bold text-[var(--tone-rose-text)] shadow-[3px_3px_0_0_var(--color-foreground)]">
               {error}
             </div>
-          ) : httpsUrl && webcalUrl ? (
+          ) : feedUrl && gcalAddUrl && webcalUrl ? (
             <div className="flex flex-col gap-2.5">
               <div className="flex items-stretch gap-2">
                 <code className="min-w-0 flex-1 truncate rounded-xl border-2 border-foreground bg-muted px-3 py-2.5 font-mono text-xs font-bold text-foreground shadow-[3px_3px_0_0_var(--color-foreground)]">
-                  {httpsUrl}
+                  {feedUrl}
                 </code>
                 <button
-                  onClick={() => copy(httpsUrl)}
+                  onClick={() => copy(feedUrl)}
                   className="inline-flex shrink-0 items-center gap-2 rounded-xl border-2 border-foreground bg-primary px-3 py-2.5 font-heading text-sm font-bold text-primary-foreground shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)]"
                 >
                   {copied ? (
@@ -126,13 +143,25 @@ export function SettingsModal({
                   {copied ? "已複製" : "複製"}
                 </button>
               </div>
-              <a
-                href={webcalUrl}
-                className="inline-flex w-fit items-center gap-1.5 rounded-md border-2 border-foreground bg-card px-2 py-0.5 font-mono text-[11px] font-bold text-accent transition-all duration-200 hover:-translate-y-0.5"
-              >
-                <CalendarPlus className="h-3.5 w-3.5" />
-                以 webcal 開啟並新增至日曆
-              </a>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={gcalAddUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-md border-2 border-foreground bg-card px-2 py-0.5 font-mono text-[11px] font-bold text-accent transition-all duration-200 hover:-translate-y-0.5"
+                >
+                  <CalendarPlus className="h-3.5 w-3.5" />
+                  新增至 Google Calendar
+                </a>
+                <button
+                  onClick={() => copy(webcalUrl)}
+                  title={webcalUrl}
+                  className="inline-flex w-fit items-center gap-1.5 rounded-md border-2 border-foreground bg-card px-2 py-0.5 font-mono text-[11px] font-bold text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:text-foreground"
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                  複製 webcal:// 連結
+                </button>
+              </div>
               <details className="rounded-xl border-2 border-dashed border-foreground/30 bg-secondary p-3">
                 <summary className="cursor-pointer text-xs font-extrabold text-foreground">
                   如何加到 Google Calendar？
