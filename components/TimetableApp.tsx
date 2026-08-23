@@ -18,7 +18,6 @@ import {
   currentSemesterWeek,
   dateLabelFor,
   maxSemesterWeek,
-  requiredCourses,
   toneOf,
   type CourseEntry,
 } from "@/lib/timetable";
@@ -50,14 +49,6 @@ export function TimetableApp({
     [anchor, now],
   );
   const maxWeek = Math.max(maxSemesterWeek(courses), currentWeek) + 1;
-
-  // 選修課程數：總課程扣除 env 必修課程
-  const electiveCount = useMemo(() => {
-    const required = new Set(requiredCourses());
-    return new Set(
-      courses.map((c) => c.course_name).filter((n) => !required.has(n)),
-    ).size;
-  }, [courses]);
 
   const week = currentWeek + weekOffset;
   const grid = useMemo(
@@ -259,7 +250,7 @@ export function TimetableApp({
         </div>
 
         <p className="mt-4 text-center font-mono text-[11px] font-bold text-muted-foreground">
-          共 {electiveCount} 門選修課程 · 資料每日 18:00 自動更新
+          資料每日 18:00 自動更新
         </p>
       </main>
 

@@ -142,7 +142,7 @@ export function SuggestModal({
         </div>
 
         <p className="rounded-xl border-2 border-dashed border-foreground/30 bg-secondary p-3 text-xs font-medium leading-relaxed text-muted-foreground">
-          判定規則：該時段含「校外參訪」顯示校外參訪；含「○○基地」顯示基地名稱；僅線上教室或沒課顯示在家中。優先序：校外參訪 &gt; ○○基地 &gt; 在家中。
+          僅供參考，請依實際課程安排為準。
         </p>
       </div>
     </Modal>

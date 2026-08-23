@@ -13,8 +13,8 @@ import {
 import { Modal } from "./Modal";
 
 const ANDROID_APP_URL =
-  "https://play.google.com/store/apps/details?id=com.google.android.calendar";
-const IOS_APP_URL = "https://apps.apple.com/app/google-calendar/id909319221";
+  "https://youtu.be/dQw4w9WgXcQ";
+const IOS_APP_URL = "https://youtu.be/dQw4w9WgXcQ";
 
 export function SettingsModal({
   open,
@@ -61,16 +61,6 @@ export function SettingsModal({
     if (!uuid || typeof window === "undefined") return null;
     return new URL(`/${uuid}`, window.location.origin).toString();
   }, [uuid]);
-
-  const gcalAddUrl = useMemo(() => {
-    if (!feedUrl) return null;
-    // Google Calendar 的 cid 參數：feed 網址的 base64（URL-safe）
-    const b64 = btoa(feedUrl)
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-    return `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(b64)}`;
-  }, [feedUrl]);
 
   const webcalUrl = useMemo(() => {
     if (!feedUrl) return null;
@@ -125,7 +115,7 @@ export function SettingsModal({
             <div className="rounded-xl border-2 border-foreground bg-[var(--tone-rose-card)] p-4 text-sm font-bold text-[var(--tone-rose-text)] shadow-[3px_3px_0_0_var(--color-foreground)]">
               {error}
             </div>
-          ) : feedUrl && gcalAddUrl && webcalUrl ? (
+          ) : feedUrl && webcalUrl ? (
             <div className="flex flex-col gap-2.5">
               <div className="flex items-stretch gap-2">
                 <code className="min-w-0 flex-1 truncate rounded-xl border-2 border-foreground bg-muted px-3 py-2.5 font-mono text-xs font-bold text-foreground shadow-[3px_3px_0_0_var(--color-foreground)]">
@@ -144,15 +134,6 @@ export function SettingsModal({
                 </button>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <a
-                  href={gcalAddUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex w-fit items-center gap-1.5 rounded-md border-2 border-foreground bg-card px-2 py-0.5 font-mono text-[11px] font-bold text-accent transition-all duration-200 hover:-translate-y-0.5"
-                >
-                  <CalendarPlus className="h-3.5 w-3.5" />
-                  新增至 Google Calendar
-                </a>
                 <button
                   onClick={() => copy(webcalUrl)}
                   title={webcalUrl}
@@ -191,7 +172,7 @@ export function SettingsModal({
             </h3>
           </div>
           <p className="text-sm font-medium text-muted-foreground">
-            將課表融入手機：安裝行事曆 App 並完成訂閱，隨時掌握每週行程。
+            將課表融入手機：待產中，你點開，應該很酷！
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <a
