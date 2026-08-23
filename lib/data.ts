@@ -68,20 +68,39 @@ function isPhysicalCourse(c: CourseEntry): boolean {
   return Boolean(c.location) && !c.location.includes("線上");
 }
 
-/** 全體學生「實體課程數」排行榜（修課表 ∪ 必修，且存在於最新課表中） */
+function semesterPeriodsOf(c: CourseEntry): number {
+  return c.schedules.reduce(
+    (sum, s) =>
+      sum +
+      s.period.split(",").map((p) => p.trim()).filter(Boolean).length,
+    0,
+  );
+}
+
+/**
+ * 全體學生「實體課程節次」排行榜：
+ * 統計整學期實體課程（排除線上教室）的總節次。
+ * 同名課程可能因地點不同有多筆，僅計一門。
+ */
 export async function buildLeaderboard(): Promise<LeaderboardRow[]> {
   const students = await loadStudents();
   const latest = await loadLatestSchedule();
-  const physicalNames = new Set(
-    latest.filter(isPhysicalCourse).map((c) => c.course_name),
-  );
+
+  const seen = new Set<string>();
+  const periodsByName = new Map<string, number>();
+  for (const c of latest) {
+    if (!isPhysicalCourse(c) || seen.has(c.course_name)) continue;
+    seen.add(c.course_name);
+    periodsByName.set(c.course_name, semesterPeriodsOf(c));
+  }
+
   return Object.entries(students)
-    .map(([id, s]) => ({
-      id,
-      name: s.name,
-      count: [...wantedCourseNames(s.class)].filter((c) =>
-        physicalNames.has(c),
-      ).length,
-    }))
+    .map(([id, s]) => {
+      const wanted = wantedCourseNames(s.class);
+      let count = 0;
+      for (const [name, n] of periodsByName)
+        if (wanted.has(name)) count += n;
+      return { id, name: s.name, count };
+    })
     .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
 }

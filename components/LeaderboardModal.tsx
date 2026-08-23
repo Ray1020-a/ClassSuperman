@@ -48,8 +48,8 @@ export function LeaderboardModal({
         <div className="grid grid-cols-2 gap-2">
           {(
             [
-              ["most", "最多課程"],
-              ["least", "最少課程"],
+              ["most", "最多節次"],
+              ["least", "最少節次"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -88,7 +88,7 @@ export function LeaderboardModal({
                     color: `var(--tone-${tone}-text)`,
                   }}
                 >
-                  {row.count} 門實體課程
+                  {row.count} 節
                 </span>
               </li>
             );
