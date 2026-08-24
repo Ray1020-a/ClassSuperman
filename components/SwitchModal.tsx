@@ -75,15 +75,6 @@ export function SwitchModal({
                         </span>
                       )}
                     </span>
-                    <span
-                      className={`font-mono text-[10px] font-bold ${
-                        active
-                          ? "text-primary-foreground/70"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {opt.courseCount} 門課
-                    </span>
                   </span>
                   {active && <Check className="h-5 w-5 shrink-0" />}
                 </button>
