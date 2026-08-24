@@ -4,14 +4,31 @@ import path from "node:path";
 import {
   matchUserCourses,
   wantedCourseNames,
+  GRADES,
+  GRADE_LABELS,
   type CourseEntry,
-  type StudentMap,
+  type Grade,
 } from "./timetable";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const CLASS_DIR = path.join(DATA_DIR, "class");
-const STUDENT_FILE = path.join(DATA_DIR, "student.json");
-const LATEST_FILE = path.join(CLASS_DIR, "latest.json");
+
+export interface StudentInfo {
+  name: string;
+  class: string[];
+  grade: Grade;
+}
+export type StudentMap = Record<string, StudentInfo>;
+
+function studentFile(grade: Grade): string {
+  return path.join(DATA_DIR, `s${grade}.json`);
+}
+function gradeClassDir(grade: Grade): string {
+  return path.join(CLASS_DIR, `s${grade}`);
+}
+function gradeLatest(grade: Grade): string {
+  return path.join(gradeClassDir(grade), "latest.json");
+}
 
 async function readJson<T>(file: string): Promise<T | null> {
   try {
@@ -21,19 +38,28 @@ async function readJson<T>(file: string): Promise<T | null> {
   }
 }
 
+/** 讀取全部學生（s1/s2/s3.json），並標記所屬年級 */
 export async function loadStudents(): Promise<StudentMap> {
-  const data = await readJson<StudentMap>(STUDENT_FILE);
-  return data ?? {};
+  const out: StudentMap = {};
+  for (const grade of GRADES) {
+    const data = await readJson<
+      Record<string, { name: string; class: string[] }>
+    >(studentFile(grade));
+    if (!data) continue;
+    for (const [id, s] of Object.entries(data))
+      out[id] = { name: s.name, class: s.class ?? [], grade };
+  }
+  return out;
 }
 
 /**
- * 讀取最新課表。latest.json 因輪替可能瞬間不存在，
+ * 讀取該年級最新課表。latest.json 因輪替可能瞬間不存在，
  * 依序退回 1~3.json 備份，確保系統持續可用。
  */
-export async function loadLatestSchedule(): Promise<CourseEntry[]> {
+export async function loadGradeSchedule(grade: Grade): Promise<CourseEntry[]> {
   for (const f of [
-    LATEST_FILE,
-    ...[1, 2, 3].map((n) => path.join(CLASS_DIR, `${n}.json`)),
+    gradeLatest(grade),
+    ...[1, 2, 3].map((n) => path.join(gradeClassDir(grade), `${n}.json`)),
   ]) {
     const data = await readJson<CourseEntry[]>(f);
     if (Array.isArray(data)) return data;
@@ -44,44 +70,54 @@ export async function loadLatestSchedule(): Promise<CourseEntry[]> {
 export async function getUserCourses(studentId: string): Promise<{
   name: string;
   classes: string[];
+  grade: Grade;
   courses: CourseEntry[];
 } | null> {
   const students = await loadStudents();
   const student = students[studentId];
   if (!student) return null;
-  const latest = await loadLatestSchedule();
+  const latest = await loadGradeSchedule(student.grade);
   return {
     name: student.name,
     classes: student.class,
-    courses: matchUserCourses(student.class, latest),
+    grade: student.grade,
+    courses: matchUserCourses(student.class, student.grade, latest),
   };
 }
 
 /** 可切換檢視的課表選項 */
 export interface TimetableOption {
-  key: string; // "master"（全體總表）或學號
+  key: string; // "master-{grade}"（年級總表）或學號
   name: string;
+  grade: Grade;
   courseCount: number;
   courses: CourseEntry[];
 }
 
-/** 載入可切換的課表：置頂全體總表 + 每位學生的個人課表 */
+/** 載入可切換的課表：各年級置頂總表 + 每位學生的個人課表 */
 export async function loadAllTimetables(): Promise<TimetableOption[]> {
   const students = await loadStudents();
-  const latest = await loadLatestSchedule();
-  const out: TimetableOption[] = [
-    {
-      key: "master",
-      name: "全體總表",
+  const out: TimetableOption[] = [];
+  for (const grade of GRADES) {
+    const latest = await loadGradeSchedule(grade);
+    out.push({
+      key: `master-${grade}`,
+      name: `${GRADE_LABELS[grade]}總表`,
+      grade,
       courseCount: latest.length,
       courses: latest,
-    },
-  ];
+    });
+  }
   for (const [id, s] of Object.entries(students)) {
-    const courses = matchUserCourses(s.class, latest);
+    const courses = matchUserCourses(
+      s.class,
+      s.grade,
+      await loadGradeSchedule(s.grade),
+    );
     out.push({
       key: id,
       name: s.name,
+      grade: s.grade,
       courseCount: courses.length,
       courses,
     });
@@ -110,13 +146,13 @@ function semesterPeriodsOf(c: CourseEntry): number {
 }
 
 /**
- * 全體學生「實體課程節次」排行榜：
- * 統計整學期實體課程（排除線上教室）的總節次。
+ * 該年級學生「實體課程節次」排行榜（各年級獨立統計）：
+ * 統計整學期該年級總表實體課程（排除線上教室）的總節次。
  * 同名課程可能因地點不同有多筆，僅計一門。
  */
-export async function buildLeaderboard(): Promise<LeaderboardRow[]> {
+export async function buildLeaderboard(grade: Grade): Promise<LeaderboardRow[]> {
   const students = await loadStudents();
-  const latest = await loadLatestSchedule();
+  const latest = await loadGradeSchedule(grade);
 
   const seen = new Set<string>();
   const periodsByName = new Map<string, number>();
@@ -127,8 +163,9 @@ export async function buildLeaderboard(): Promise<LeaderboardRow[]> {
   }
 
   return Object.entries(students)
+    .filter(([, s]) => s.grade === grade)
     .map(([id, s]) => {
-      const wanted = wantedCourseNames(s.class);
+      const wanted = wantedCourseNames(s.class, s.grade);
       let count = 0;
       for (const [name, n] of periodsByName)
         if (wanted.has(name)) count += n;

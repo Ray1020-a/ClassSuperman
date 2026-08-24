@@ -21,6 +21,7 @@ import {
   maxSemesterWeek,
   toneOf,
   type CourseEntry,
+  type Grade,
 } from "@/lib/timetable";
 import type { LeaderboardRow, TimetableOption } from "@/lib/data";
 import { SettingsModal } from "./SettingsModal";
@@ -31,6 +32,7 @@ import { SwitchModal } from "./SwitchModal";
 export function TimetableApp({
   name,
   selfId,
+  selfGrade,
   courses,
   timetables,
   leaderboard,
@@ -38,6 +40,7 @@ export function TimetableApp({
 }: {
   name: string;
   selfId: string;
+  selfGrade: Grade;
   courses: CourseEntry[];
   timetables: TimetableOption[];
   leaderboard: LeaderboardRow[];
@@ -48,15 +51,27 @@ export function TimetableApp({
   const [boardOpen, setBoardOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
+  const [viewGrade, setViewGrade] = useState<Grade>(selfGrade);
   const [viewKey, setViewKey] = useState(selfId);
 
+  const gradeOptions = useMemo(
+    () => timetables.filter((t) => t.grade === viewGrade),
+    [timetables, viewGrade],
+  );
+
   const selected =
-    timetables.find((t) => t.key === viewKey) ?? timetables[0] ?? {
-      key: "master",
-      name: "全體總表",
+    gradeOptions.find((t) => t.key === viewKey) ?? gradeOptions[0] ?? {
+      key: `master-${viewGrade}`,
+      name: "課表",
+      grade: viewGrade,
       courseCount: 0,
       courses: [],
     };
+
+  const handleGradeChange = (g: Grade) => {
+    setViewGrade(g);
+    setViewKey(`master-${g}`);
+  };
 
   const now = useMemo(() => new Date(), []);
   const anchor = useMemo(() => new Date(anchorMs), [anchorMs]);
@@ -73,7 +88,7 @@ export function TimetableApp({
     [selected.courses, week],
   );
   const isCurrentWeek = weekOffset === 0;
-  const isSelfView = viewKey === selfId;
+  const isSelfView = viewKey === selfId && viewGrade === selfGrade;
 
   // 今天為星期幾（一=0 … 五=4），供當日欄位高亮
   const todayIdx = ((now.getDay() + 6) % 7) as number;
@@ -182,7 +197,10 @@ export function TimetableApp({
             )}
             {!isSelfView && (
               <button
-                onClick={() => setViewKey(selfId)}
+                onClick={() => {
+                  setViewGrade(selfGrade);
+                  setViewKey(selfId);
+                }}
                 className="rounded-md border-2 border-foreground bg-card px-2 py-0.5 font-mono text-[11px] font-bold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary"
               >
                 回到我的課表
@@ -293,7 +311,9 @@ export function TimetableApp({
       <SwitchModal
         open={switchOpen}
         onClose={() => setSwitchOpen(false)}
-        options={timetables}
+        options={gradeOptions}
+        grade={viewGrade}
+        onGradeChange={handleGradeChange}
         current={viewKey}
         onSelect={setViewKey}
       />

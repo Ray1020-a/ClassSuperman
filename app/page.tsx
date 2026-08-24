@@ -5,7 +5,7 @@ import {
   buildLeaderboard,
   getUserCourses,
   loadAllTimetables,
-  loadLatestSchedule,
+  loadGradeSchedule,
 } from "@/lib/data";
 import { semesterAnchor } from "@/lib/timetable";
 import { NoAccess } from "@/components/NoAccess";
@@ -17,15 +17,15 @@ export default async function Home() {
   const session = await getSession();
   if (!session) redirect(loginUrlFor("/"));
 
-  // 取 email @ 前的內容作為學號，比對 data/student.json
+  // 取 email @ 前的內容作為學號，比對 s1/s2/s3.json 以配對年級
   const studentId = studentIdOf(session);
   const user = await getUserCourses(studentId);
   if (!user) return <NoAccess />;
 
   const [latest, timetables, leaderboard] = await Promise.all([
-    loadLatestSchedule(),
+    loadGradeSchedule(user.grade),
     loadAllTimetables(),
-    buildLeaderboard(),
+    buildLeaderboard(user.grade),
   ]);
   const anchor = semesterAnchor(latest);
 
@@ -33,6 +33,7 @@ export default async function Home() {
     <TimetableApp
       name={user.name}
       selfId={studentId}
+      selfGrade={user.grade}
       courses={user.courses}
       timetables={timetables}
       leaderboard={leaderboard}

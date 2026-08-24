@@ -33,27 +33,52 @@ export const MORNING_PERIODS = [1, 2, 3, 4];
 export const AFTERNOON_PERIODS = [5, 6, 7, 8];
 export const DAY_NAMES = ["一", "二", "三", "四", "五"] as const;
 
-export function requiredCourses(): string[] {
-  return (process.env.REQUIRED_COURSES ?? "")
+export const GRADES = ["1", "2", "3"] as const;
+export type Grade = (typeof GRADES)[number];
+export const GRADE_LABELS: Record<Grade, string> = {
+  "1": "高一",
+  "2": "高二",
+  "3": "高三",
+};
+
+function splitCourses(value: string): string[] {
+  return value
     .split(",")
     .map((c) => c.trim())
     .filter(Boolean);
 }
 
-/** 使用者應修課程名稱集合：student.json 的 class + env 必修課程 */
-export function wantedCourseNames(studentClasses: string[]): Set<string> {
-  return new Set([...studentClasses, ...requiredCourses()]);
+/**
+ * 必修課程：全體共同（REQUIRED_COURSES）+ 各年級專屬
+ * （REQUIRED_COURSES_S1/S2/S3）。未指定年級時僅回傳共同課程。
+ */
+export function requiredCourses(grade?: Grade): string[] {
+  const common = splitCourses(process.env.REQUIRED_COURSES ?? "");
+  if (!grade) return common;
+  const specific = splitCourses(
+    process.env[`REQUIRED_COURSES_S${grade}`] ?? "",
+  );
+  return [...common, ...specific];
+}
+
+/** 使用者應修課程名稱集合：student.json 的 class + 必修課程（含年級專屬） */
+export function wantedCourseNames(
+  studentClasses: string[],
+  grade: Grade,
+): Set<string> {
+  return new Set([...studentClasses, ...requiredCourses(grade)]);
 }
 
 /**
- * 比對修課表，取得使用者課程（latest.json 中 course_name 符合者）。
+ * 比對修課表，取得使用者課程（該年級總表中 course_name 符合者）。
  * 同名課程可能因不同地點有多筆，全部保留。
  */
 export function matchUserCourses(
   studentClasses: string[],
+  grade: Grade,
   latest: CourseEntry[],
 ): CourseEntry[] {
-  const wanted = wantedCourseNames(studentClasses);
+  const wanted = wantedCourseNames(studentClasses, grade);
   return latest.filter((e) => wanted.has(e.course_name));
 }
 

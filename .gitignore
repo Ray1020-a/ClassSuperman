@@ -49,10 +49,16 @@ next-env.d.ts
 *.db-journal
 *.db-wal
 *.db-shm
-/data/class/1.json
-/data/class/2.json
-/data/class/3.json
-/data/class/*.tmp.json
+/data/class/s1/1.json
+/data/class/s1/2.json
+/data/class/s1/3.json
+/data/class/s2/1.json
+/data/class/s2/2.json
+/data/class/s2/3.json
+/data/class/s3/1.json
+/data/class/s3/2.json
+/data/class/s3/3.json
+/data/class/s*/latest.new.json
 
 # pm2 logs
 /logs

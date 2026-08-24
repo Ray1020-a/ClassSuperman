@@ -1,11 +1,9 @@
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { CourseEntry } from "./timetable";
+import { GRADES, type CourseEntry, type Grade } from "./timetable";
 
 const CLASS_DIR = path.join(process.cwd(), "data", "class");
-const LATEST = path.join(CLASS_DIR, "latest.json");
-const TMP = path.join(CLASS_DIR, "latest.new.json");
 
 interface RawCell {
   value?: string;
@@ -130,23 +128,33 @@ async function exists(f: string): Promise<boolean> {
   }
 }
 
-/** 輪替備份：latest -> 1 -> 2 -> 3（超過三個刪除），僅保留最新抓取 */
-async function rotateBackups(): Promise<void> {
-  const f3 = path.join(CLASS_DIR, "3.json");
-  const f2 = path.join(CLASS_DIR, "2.json");
-  const f1 = path.join(CLASS_DIR, "1.json");
+/** 輪替該年級備份：latest -> 1 -> 2 -> 3（超過三個刪除），僅保留最新抓取 */
+async function rotateBackups(dir: string, latest: string): Promise<void> {
+  const f3 = path.join(dir, "3.json");
+  const f2 = path.join(dir, "2.json");
+  const f1 = path.join(dir, "1.json");
 
   await fs.rm(f3, { force: true });
   if (await exists(f2)) await fs.rename(f2, f3);
   if (await exists(f1)) await fs.rename(f1, f2);
-  if (await exists(LATEST)) await fs.copyFile(LATEST, f1);
+  if (await exists(latest)) await fs.copyFile(latest, f1);
 }
 
-/** 抓取最新課表；過程中盡力保留 latest.json 使系統持續運作 */
-export async function fetchLatestSchedule(): Promise<boolean> {
-  const url = process.env.SCHEDULE_API_URL;
+function scheduleUrlOf(grade: Grade): string {
+  const specific = process.env[`SCHEDULE_API_URL_S${grade}`];
+  if (specific) return specific;
+  // 向後相容：高二退回 SCHEDULE_API_URL
+  if (grade === "2") return process.env.SCHEDULE_API_URL ?? "";
+  return "";
+}
+
+/** 抓取該年級最新課表；過程中盡力保留 latest.json 使系統持續運作 */
+export async function fetchLatestSchedule(grade: Grade): Promise<boolean> {
+  const url = scheduleUrlOf(grade);
   if (!url) {
-    console.warn("[scheduler] 未設定 SCHEDULE_API_URL，略過抓取");
+    console.warn(
+      `[scheduler] 未設定 SCHEDULE_API_URL_S${grade}，略過 s${grade} 抓取`,
+    );
     return false;
   }
   try {
@@ -157,18 +165,25 @@ export async function fetchLatestSchedule(): Promise<boolean> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const parsed = parseAndMergeSchedule(await res.json());
 
+    const dir = path.join(CLASS_DIR, `s${grade}`);
+    const latest = path.join(dir, "latest.json");
+    const tmp = path.join(dir, "latest.new.json");
+
     // 新資料已在記憶體就緒，才開始輪替舊檔
-    await fs.mkdir(CLASS_DIR, { recursive: true });
-    await fs.writeFile(TMP, JSON.stringify(parsed, null, 2), "utf8");
-    await rotateBackups();
-    await fs.rm(LATEST, { force: true });
-    await fs.rename(TMP, LATEST);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(tmp, JSON.stringify(parsed, null, 2), "utf8");
+    await rotateBackups(dir, latest);
+    await fs.rm(latest, { force: true });
+    await fs.rename(tmp, latest);
     console.log(
-      `[scheduler] 課表已更新：共 ${parsed.length} 門課程`,
+      `[scheduler] s${grade}（${grade}）課表已更新：共 ${parsed.length} 門課程`,
     );
     return true;
   } catch (err) {
-    console.error("[scheduler] 抓取失敗，保留現有 latest.json：", err);
+    console.error(
+      `[scheduler] s${grade} 抓取失敗，保留現有 latest.json：`,
+      err,
+    );
     return false;
   }
 }
@@ -182,20 +197,18 @@ function msUntilNext1800Taipei(now = new Date()): number {
   return target.getTime() - now.getTime();
 }
 
-/** 啟動排程：每次啟動/重啟立即抓取一次；之後每天 18:00（UTC+8）抓取 */
+/** 啟動排程：每次啟動/重啟立即抓取所有年級一次；之後每天 18:00（UTC+8）抓取 */
 export function startScheduler(): void {
   void (async () => {
-    await fetchLatestSchedule();
-    if (!(await exists(LATEST))) {
-      console.warn("[scheduler] 啟動抓取後仍無 latest.json");
-    }
+    await Promise.allSettled(GRADES.map((g) => fetchLatestSchedule(g)));
     const scheduleNext = () => {
       const delay = msUntilNext1800Taipei();
       console.log(
         `[scheduler] next fetch in ${Math.round(delay / 60000)} min (18:00 UTC+8)`,
       );
       setTimeout(() => {
-        void fetchLatestSchedule().finally(scheduleNext);
+        void Promise.allSettled(GRADES.map((g) => fetchLatestSchedule(g)))
+          .then(scheduleNext);
       }, delay);
     };
     scheduleNext();
