@@ -81,6 +81,9 @@ export function TimetableApp({
   );
   const maxWeek =
     Math.max(maxSemesterWeek(selected.courses), currentWeek) + 1;
+  // 固定可導覽範圍：第 1 週 ~ 第 maxWeek 週
+  const minOffset = 1 - currentWeek;
+  const maxOffset = maxWeek - currentWeek;
 
   const week = currentWeek + weekOffset;
   const grid = useMemo(
@@ -169,7 +172,9 @@ export function TimetableApp({
           <div className="flex items-center gap-2">
             <IconButton
               title="上一週"
-              onClick={() => setWeekOffset((w) => Math.max(w - 1, 1 - week))}
+              onClick={() =>
+                setWeekOffset((w) => Math.max(w - 1, minOffset))
+              }
             >
               <ChevronLeft className="h-5 w-5" />
             </IconButton>
@@ -183,7 +188,9 @@ export function TimetableApp({
             </div>
             <IconButton
               title="下一週"
-              onClick={() => setWeekOffset((w) => Math.min(w + 1, maxWeek - week))}
+              onClick={() =>
+                setWeekOffset((w) => Math.min(w + 1, maxOffset))
+              }
             >
               <ChevronRight className="h-5 w-5" />
             </IconButton>
