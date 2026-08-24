@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation";
 import { getSession, studentIdOf } from "@/lib/tpass-auth";
 import { loginUrlFor } from "@/lib/guard";
-import { buildLeaderboard, getUserCourses } from "@/lib/data";
+import {
+  buildLeaderboard,
+  getUserCourses,
+  loadAllTimetables,
+  loadLatestSchedule,
+} from "@/lib/data";
 import { semesterAnchor } from "@/lib/timetable";
 import { NoAccess } from "@/components/NoAccess";
 import { TimetableApp } from "@/components/TimetableApp";
@@ -17,13 +22,19 @@ export default async function Home() {
   const user = await getUserCourses(studentId);
   if (!user) return <NoAccess />;
 
-  const anchor = semesterAnchor(user.courses);
-  const leaderboard = await buildLeaderboard();
+  const [latest, timetables, leaderboard] = await Promise.all([
+    loadLatestSchedule(),
+    loadAllTimetables(),
+    buildLeaderboard(),
+  ]);
+  const anchor = semesterAnchor(latest);
 
   return (
     <TimetableApp
       name={user.name}
+      selfId={studentId}
       courses={user.courses}
+      timetables={timetables}
       leaderboard={leaderboard}
       anchorMs={anchor.getTime()}
     />

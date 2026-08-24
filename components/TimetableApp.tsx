@@ -9,6 +9,7 @@ import {
   MapPin,
   Settings,
   Trophy,
+  Users,
 } from "lucide-react";
 import {
   DAY_NAMES,
@@ -21,19 +22,24 @@ import {
   toneOf,
   type CourseEntry,
 } from "@/lib/timetable";
-import type { LeaderboardRow } from "@/lib/data";
+import type { LeaderboardRow, TimetableOption } from "@/lib/data";
 import { SettingsModal } from "./SettingsModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import { SuggestModal } from "./SuggestModal";
+import { SwitchModal } from "./SwitchModal";
 
 export function TimetableApp({
   name,
+  selfId,
   courses,
+  timetables,
   leaderboard,
   anchorMs,
 }: {
   name: string;
+  selfId: string;
   courses: CourseEntry[];
+  timetables: TimetableOption[];
   leaderboard: LeaderboardRow[];
   anchorMs: number;
 }) {
@@ -41,6 +47,16 @@ export function TimetableApp({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [boardOpen, setBoardOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
+  const [switchOpen, setSwitchOpen] = useState(false);
+  const [viewKey, setViewKey] = useState(selfId);
+
+  const selected =
+    timetables.find((t) => t.key === viewKey) ?? timetables[0] ?? {
+      key: "master",
+      name: "全體總表",
+      courseCount: 0,
+      courses: [],
+    };
 
   const now = useMemo(() => new Date(), []);
   const anchor = useMemo(() => new Date(anchorMs), [anchorMs]);
@@ -48,14 +64,16 @@ export function TimetableApp({
     () => currentSemesterWeek(anchor, now),
     [anchor, now],
   );
-  const maxWeek = Math.max(maxSemesterWeek(courses), currentWeek) + 1;
+  const maxWeek =
+    Math.max(maxSemesterWeek(selected.courses), currentWeek) + 1;
 
   const week = currentWeek + weekOffset;
   const grid = useMemo(
-    () => buildWeekGrid(courses, week),
-    [courses, week],
+    () => buildWeekGrid(selected.courses, week),
+    [selected.courses, week],
   );
   const isCurrentWeek = weekOffset === 0;
+  const isSelfView = viewKey === selfId;
 
   // 今天為星期幾（一=0 … 五=4），供當日欄位高亮
   const todayIdx = ((now.getDay() + 6) % 7) as number;
@@ -76,6 +94,14 @@ export function TimetableApp({
           </span>
 
           <div className="flex items-center gap-2">
+            {/* 切換課表 */}
+            <IconButton
+              title="切換課表"
+              onClick={() => setSwitchOpen(true)}
+              tone="green"
+            >
+              <Users className="h-5 w-5" />
+            </IconButton>
             {/* 排行榜 */}
             <IconButton
               title="課程排行榜"
@@ -154,9 +180,17 @@ export function TimetableApp({
                 回本週
               </button>
             )}
+            {!isSelfView && (
+              <button
+                onClick={() => setViewKey(selfId)}
+                className="rounded-md border-2 border-foreground bg-card px-2 py-0.5 font-mono text-[11px] font-bold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-secondary"
+              >
+                回到我的課表
+              </button>
+            )}
           </div>
           <span className="hidden rounded-md border-2 border-foreground bg-secondary px-2 py-0.5 font-mono text-[11px] font-bold text-foreground sm:block">
-            {name} 的個人課表
+            {isSelfView ? `${name} 的個人課表` : `檢視中：${selected.name}`}
           </span>
         </div>
 
@@ -256,6 +290,13 @@ export function TimetableApp({
 
       {/* Modals */}
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SwitchModal
+        open={switchOpen}
+        onClose={() => setSwitchOpen(false)}
+        options={timetables}
+        current={viewKey}
+        onSelect={setViewKey}
+      />
       <LeaderboardModal
         open={boardOpen}
         onClose={() => setBoardOpen(false)}

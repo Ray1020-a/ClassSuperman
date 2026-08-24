@@ -57,6 +57,38 @@ export async function getUserCourses(studentId: string): Promise<{
   };
 }
 
+/** 可切換檢視的課表選項 */
+export interface TimetableOption {
+  key: string; // "master"（全體總表）或學號
+  name: string;
+  courseCount: number;
+  courses: CourseEntry[];
+}
+
+/** 載入可切換的課表：置頂全體總表 + 每位學生的個人課表 */
+export async function loadAllTimetables(): Promise<TimetableOption[]> {
+  const students = await loadStudents();
+  const latest = await loadLatestSchedule();
+  const out: TimetableOption[] = [
+    {
+      key: "master",
+      name: "全體總表",
+      courseCount: latest.length,
+      courses: latest,
+    },
+  ];
+  for (const [id, s] of Object.entries(students)) {
+    const courses = matchUserCourses(s.class, latest);
+    out.push({
+      key: id,
+      name: s.name,
+      courseCount: courses.length,
+      courses,
+    });
+  }
+  return out;
+}
+
 export interface LeaderboardRow {
   id: string;
   name: string;
