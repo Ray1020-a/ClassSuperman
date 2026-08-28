@@ -4,21 +4,25 @@ import { useState } from "react";
 import { Crown, Medal, Trophy } from "lucide-react";
 import { Modal } from "./Modal";
 import type { LeaderboardRow } from "@/lib/data";
-import { toneOf } from "@/lib/timetable";
+import { GRADES, GRADE_LABELS, toneOf, type Grade } from "@/lib/timetable";
 
 type Tab = "most" | "least";
 
 export function LeaderboardModal({
   open,
   onClose,
-  rows,
+  rowsByGrade,
+  initialGrade,
 }: {
   open: boolean;
   onClose: () => void;
-  rows: LeaderboardRow[];
+  rowsByGrade: Record<Grade, LeaderboardRow[]>;
+  initialGrade: Grade;
 }) {
   const [tab, setTab] = useState<Tab>("most");
+  const [grade, setGrade] = useState<Grade>(initialGrade);
 
+  const rows = rowsByGrade[grade] ?? [];
   const sorted =
     tab === "most"
       ? rows
@@ -45,6 +49,23 @@ export function LeaderboardModal({
       icon={<Trophy className="h-5 w-5" />}
     >
       <div className="flex flex-col gap-4">
+        {/* 年級選擇 */}
+        <div className="grid grid-cols-3 gap-2">
+          {GRADES.map((g) => (
+            <button
+              key={g}
+              onClick={() => setGrade(g)}
+              className={`rounded-xl border-2 border-foreground px-3 py-2 font-heading font-extrabold shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)] ${
+                grade === g
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card text-foreground"
+              }`}
+            >
+              {GRADE_LABELS[g]}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 gap-2">
           {(
             [

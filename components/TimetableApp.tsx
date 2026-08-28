@@ -23,8 +23,7 @@ import {
   type CourseEntry,
   type Grade,
 } from "@/lib/timetable";
-import type { LeaderboardRow, TimetableOption } from "@/lib/data";
-import { SettingsModal } from "./SettingsModal";
+import type { LeaderboardRow, TimetableOption } from "@/lib/data";import { SettingsModal } from "./SettingsModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import { SuggestModal } from "./SuggestModal";
 import { SwitchModal } from "./SwitchModal";
@@ -35,7 +34,7 @@ export function TimetableApp({
   selfGrade,
   courses,
   timetables,
-  leaderboard,
+  rowsByGrade,
   anchorMs,
 }: {
   name: string;
@@ -43,7 +42,7 @@ export function TimetableApp({
   selfGrade: Grade;
   courses: CourseEntry[];
   timetables: TimetableOption[];
-  leaderboard: LeaderboardRow[];
+  rowsByGrade: Record<Grade, LeaderboardRow[]>;
   anchorMs: number;
 }) {
   const [weekOffset, setWeekOffset] = useState(0);
@@ -327,7 +326,8 @@ export function TimetableApp({
       <LeaderboardModal
         open={boardOpen}
         onClose={() => setBoardOpen(false)}
-        rows={leaderboard}
+        rowsByGrade={rowsByGrade}
+        initialGrade={selfGrade}
       />
       <SuggestModal
         open={suggestOpen}

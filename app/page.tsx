@@ -7,7 +7,7 @@ import {
   loadAllTimetables,
   loadGradeSchedule,
 } from "@/lib/data";
-import { semesterAnchor } from "@/lib/timetable";
+import { GRADES, semesterAnchor } from "@/lib/timetable";
 import { NoAccess } from "@/components/NoAccess";
 import { TimetableApp } from "@/components/TimetableApp";
 
@@ -22,12 +22,16 @@ export default async function Home() {
   const user = await getUserCourses(studentId);
   if (!user) return <NoAccess />;
 
-  const [latest, timetables, leaderboard] = await Promise.all([
+  const [latest, timetables, leaderboardRows] = await Promise.all([
     loadGradeSchedule(user.grade),
     loadAllTimetables(),
-    buildLeaderboard(user.grade),
+    Promise.all(GRADES.map(async (g) => [g, await buildLeaderboard(g)] as const)),
   ]);
   const anchor = semesterAnchor(latest);
+  const rowsByGrade = Object.fromEntries(leaderboardRows) as Record<
+    (typeof GRADES)[number],
+    Awaited<ReturnType<typeof buildLeaderboard>>
+  >;
 
   return (
     <TimetableApp
@@ -36,7 +40,7 @@ export default async function Home() {
       selfGrade={user.grade}
       courses={user.courses}
       timetables={timetables}
-      leaderboard={leaderboard}
+      rowsByGrade={rowsByGrade}
       anchorMs={anchor.getTime()}
     />
   );
