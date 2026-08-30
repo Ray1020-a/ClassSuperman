@@ -23,7 +23,7 @@ export async function GET(
   if (!rl.allowed)
     return tooMany(rl.retryAfterSec);
 
-  const studentId = studentIdByUuid(uuid);
+  const studentId = await studentIdByUuid(uuid);
   if (!studentId) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

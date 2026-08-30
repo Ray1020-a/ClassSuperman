@@ -3,4 +3,6 @@ export async function register(): Promise<void> {
   if (process.env.NEXT_PHASE === "phase-production-build") return;
   const { startScheduler } = await import("./lib/scheduler");
   startScheduler();
+  const { startCalendarSyncWorker } = await import("./lib/calendar-queue");
+  startCalendarSyncWorker();
 }
