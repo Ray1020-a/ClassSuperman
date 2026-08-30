@@ -43,7 +43,7 @@ export function Modal({
                 {icon}
               </span>
             ) : null}
-            <h2 className="font-heading text-lg font-extrabold tracking-tight text-foreground">
+            <h2 className="text-lg font-extrabold tracking-tight text-foreground">
               {title}
             </h2>
           </div>
