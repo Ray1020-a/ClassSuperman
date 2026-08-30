@@ -22,7 +22,7 @@ export async function GET(
   rl = rateLimit(`ics:ip:${clientIp(req)}`, IP_LIMIT);
   if (!rl.allowed) return tooMany(rl.retryAfterSec);
 
-  const studentId = studentIdByUuid(uuid);
+  const studentId = await studentIdByUuid(uuid);
   if (!studentId) {
     return new NextResponse("Not found", { status: 404 });
   }

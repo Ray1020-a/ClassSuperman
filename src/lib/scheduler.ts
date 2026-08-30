@@ -1,7 +1,9 @@
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { GRADES, type CourseEntry, type Grade } from "./timetable";
+import { GRADES, wantedCourseNames, type CourseEntry, type Grade } from "./timetable";
+import { loadStudents } from "./data";
+import { prisma } from "./db";
 
 const CLASS_DIR = path.join(process.cwd(), "data", "class");
 
@@ -148,6 +150,78 @@ function scheduleUrlOf(grade: Grade): string {
   return "";
 }
 
+async function readJsonSafe(f: string): Promise<CourseEntry[] | null> {
+  try {
+    const data = JSON.parse(await fs.readFile(f, "utf8"));
+    return Array.isArray(data) ? (data as CourseEntry[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 課名 -> 該課所有（地點, 節次組合）簽章集合。同名課可能因地點不同有多筆。 */
+function courseNameSignatures(courses: CourseEntry[]): Map<string, Set<string>> {
+  const map = new Map<string, Set<string>>();
+  for (const c of courses) {
+    const sig = `${c.location}|${[...c.schedules]
+      .map((s) => `${s.week}-${s.day}-${s.period}`)
+      .sort()
+      .join(",")}`;
+    const set = map.get(c.course_name) ?? new Set<string>();
+    set.add(sig);
+    map.set(c.course_name, set);
+  }
+  return map;
+}
+
+/** 調課會影響一群人，不是一個人：算出新舊課表之間「新增/移除/時間或地點變動」的課名集合。 */
+function diffAffectedCourseNames(
+  prev: CourseEntry[],
+  next: CourseEntry[],
+): Set<string> {
+  const prevMap = courseNameSignatures(prev);
+  const nextMap = courseNameSignatures(next);
+  const affected = new Set<string>();
+  for (const name of new Set([...prevMap.keys(), ...nextMap.keys()])) {
+    const a = prevMap.get(name);
+    const b = nextMap.get(name);
+    const same = a && b && a.size === b.size && [...a].every((x) => b.has(x));
+    if (!same) affected.add(name);
+  }
+  return affected;
+}
+
+/**
+ * 把「修了這些異動課名之一、且已連結 Google Calendar」的學生排入同步佇列。
+ * 佇列就是 CalendarGrant.pendingSince 這個欄位本身（見 lib/calendar-queue.ts）。
+ */
+async function enqueueAffectedStudents(
+  grade: Grade,
+  affected: Set<string>,
+): Promise<void> {
+  const students = await loadStudents();
+  const ids = Object.entries(students)
+    .filter(([, s]) => s.grade === grade)
+    .filter(([, s]) => {
+      const wanted = wantedCourseNames(s.class, grade);
+      for (const name of affected) if (wanted.has(name)) return true;
+      return false;
+    })
+    .map(([id]) => id);
+  if (ids.length === 0) return;
+
+  const { count } = await prisma.calendarGrant.updateMany({
+    where: { studentId: { in: ids }, invalidatedAt: null },
+    data: { pendingSince: new Date() },
+  });
+  if (count > 0) {
+    console.log(
+      `[scheduler] s${grade} 課表異動（${[...affected].join("、")}）：` +
+        `已將 ${count} 位已連結 Calendar 的學生排入同步佇列`,
+    );
+  }
+}
+
 /** 抓取該年級最新課表；過程中盡力保留 latest.json 使系統持續運作 */
 export async function fetchLatestSchedule(grade: Grade): Promise<boolean> {
   const url = scheduleUrlOf(grade);
@@ -169,6 +243,9 @@ export async function fetchLatestSchedule(grade: Grade): Promise<boolean> {
     const latest = path.join(dir, "latest.json");
     const tmp = path.join(dir, "latest.new.json");
 
+    // 異動比對要看「這次覆蓋前」的內容，寫檔前先讀。讀不到（首次抓取）就不比對。
+    const previous = await readJsonSafe(latest);
+
     // 新資料已在記憶體就緒，才開始輪替舊檔
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(tmp, JSON.stringify(parsed, null, 2), "utf8");
@@ -178,6 +255,16 @@ export async function fetchLatestSchedule(grade: Grade): Promise<boolean> {
     console.log(
       `[scheduler] s${grade}（${grade}）課表已更新：共 ${parsed.length} 門課程`,
     );
+
+    if (previous) {
+      const affected = diffAffectedCourseNames(previous, parsed);
+      if (affected.size > 0) {
+        await enqueueAffectedStudents(grade, affected).catch((err) =>
+          console.error(`[scheduler] s${grade} 排入 Calendar 同步佇列失敗：`, err),
+        );
+      }
+    }
+
     return true;
   } catch (err) {
     console.error(

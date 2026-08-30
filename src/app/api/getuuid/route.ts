@@ -12,7 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const studentId = studentIdOf(session);
-  const link = getOrCreateCalendarLink(studentId);
+  const link = await getOrCreateCalendarLink(studentId);
   return NextResponse.json(
     { uuid: link.uuid, enabled: !!link.enabled },
     { headers: { "cache-control": "no-store" } },

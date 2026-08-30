@@ -1,0 +1,52 @@
+// T-Schedule 資料模型。
+// CalendarLink 是既有的 ICS 訂閱 feed（原本用 node:sqlite 存，這次一併搬進來，
+// 服務只保留一套持久層，不要 SQLite + Postgres 兩份並存）。
+// CalendarGrant / SyncedEvent 是 Google Calendar 雙向同步用的（把課表寫進學生自己主日曆）。
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// ICS 訂閱 feed：學號 -> 固定不變的 uuid。唯讀查詢端點（/[uuid]、/api/json/[uuid]）
+/// 靠 uuid 反查學號；enabled 只在第一次呼叫 /api/getuuid 時開啟，不提供關閉。
+model CalendarLink {
+  uuid      String   @id @default(uuid())
+  studentId String   @unique
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+/// 一位學生的 Google Calendar 寫入授權。refreshToken 是 AES-256-GCM 密文
+/// （CALENDAR_TOKEN_KEY 加密），不是明文——本表全量外洩也换不到任何人的 Google 帳號。
+///
+/// pendingSince 非 null＝在同步佇列裡，佇列狀態就是這張表本身（重啟不掉、不必額外的 job 表）。
+/// invalidatedAt 非 null＝refresh token 已知失效（學生自己在 Google 帳號頁撤銷），
+/// 不再排入同步，UI 顯示「需要重新連結」。
+model CalendarGrant {
+  studentId     String    @id
+  googleSub     String    @unique
+  googleEmail   String
+  refreshToken  String
+  connectedAt   DateTime  @default(now())
+  lastSyncAt    DateTime?
+  lastSyncError String?
+  pendingSince  DateTime?
+  invalidatedAt DateTime?
+
+  @@index([pendingSince])
+}
+
+/// 已經寫進該學生主日曆的事件，key 用來算出 deterministic 的 Google event id
+/// （見 src/lib/google-calendar.ts 的 eventIdFor）——本地資料就算全毀，也能靠
+/// studentId+key 精準算出要刪哪些 id，不會在學生日曆留下幽靈課。
+model SyncedEvent {
+  studentId   String
+  key         String // "<課名>|<M/D>|<起始節>"，合併連續節次後的穩定識別
+  fingerprint String // hash(課名, 地點, 起訖時間)，變了才 patch
+
+  @@id([studentId, key])
+}
