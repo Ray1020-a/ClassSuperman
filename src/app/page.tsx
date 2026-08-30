@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession, studentIdOf } from "@/lib/tpass-auth";
-import { loginUrlFor } from "@/lib/guard";
+import { tpass, studentIdOf, loginUrlFor, deniedUrlFor, authConfig } from "@/config/auth";
 import {
   buildLeaderboard,
   getUserCourses,
@@ -14,13 +13,16 @@ import { TimetableApp } from "@/components/TimetableApp";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const session = await getSession();
+  const session = await tpass.getSession();
   if (!session) redirect(loginUrlFor("/"));
+
+  const perm = tpass.permOf(session);
+  if (!perm.read) redirect(deniedUrlFor());
 
   // 取 email @ 前的內容作為學號，比對 s1/s2/s3.json 以配對年級
   const studentId = studentIdOf(session);
   const user = await getUserCourses(studentId);
-  if (!user) return <NoAccess />;
+  if (!user) return <NoAccess portalUrl={authConfig.portalUrl} />;
 
   const [latest, timetables, leaderboardRows] = await Promise.all([
     loadGradeSchedule(user.grade),

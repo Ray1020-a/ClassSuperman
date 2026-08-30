@@ -69,7 +69,7 @@ export function SuggestModal({
             <button
               key={key}
               onClick={() => setWeekKey(key)}
-              className={`rounded-xl border-2 border-foreground px-3 py-2 font-heading font-extrabold shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)] ${
+              className={`rounded-xl border-2 border-foreground px-3 py-2 font-extrabold shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)] ${
                 weekKey === key
                   ? "bg-primary text-primary-foreground"
                   : "bg-card text-foreground"
@@ -103,7 +103,7 @@ export function SuggestModal({
                 >
                   <td className="border-t-2 border-dashed border-foreground/30 px-3 py-2.5 align-middle">
                     <div className="flex flex-col">
-                      <span className="font-heading font-extrabold text-foreground">
+                      <span className="font-extrabold text-foreground">
                         週{DAY_NAMES[day - 1]}
                       </span>
                       <span className="font-mono text-[10px] font-bold text-muted-foreground">
@@ -125,8 +125,8 @@ export function SuggestModal({
                         <span
                           className="inline-flex items-center gap-1.5 rounded-md border-2 border-foreground px-2 py-1 text-xs font-bold"
                           style={{
-                            backgroundColor: `var(--tone-${tone}-badge)`,
-                            color: `var(--tone-${tone}-text)`,
+                            backgroundColor: `var(--color-tone-${tone}-badge)`,
+                            color: `var(--color-tone-${tone}-text)`,
                           }}
                         >
                           <Icon className="h-3.5 w-3.5 shrink-0" />

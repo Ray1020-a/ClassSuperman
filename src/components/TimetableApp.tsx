@@ -23,7 +23,8 @@ import {
   type CourseEntry,
   type Grade,
 } from "@/lib/timetable";
-import type { LeaderboardRow, TimetableOption } from "@/lib/data";import { SettingsModal } from "./SettingsModal";
+import type { LeaderboardRow, TimetableOption } from "@/lib/data";
+import { SettingsModal } from "./SettingsModal";
 import { LeaderboardModal } from "./LeaderboardModal";
 import { SuggestModal } from "./SuggestModal";
 import { SwitchModal } from "./SwitchModal";
@@ -145,7 +146,7 @@ export function TimetableApp({
             </IconButton>
 
             <span className="ml-1 hidden flex-col leading-tight sm:flex">
-              <span className="font-heading text-sm font-extrabold text-foreground">
+              <span className="text-sm font-extrabold text-foreground">
                 {name}
               </span>
               <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -178,7 +179,7 @@ export function TimetableApp({
               <ChevronLeft className="h-5 w-5" />
             </IconButton>
             <div className="rounded-xl border-2 border-foreground bg-card px-4 py-1.5 shadow-[3px_3px_0_0_var(--color-foreground)]">
-              <span className="font-heading font-extrabold text-foreground">
+              <span className="font-extrabold text-foreground">
                 第 {week} 週
               </span>
               <span className="ml-2 font-mono text-xs font-bold text-muted-foreground">
@@ -233,7 +234,7 @@ export function TimetableApp({
                       : "border-dashed border-transparent"
                   }`}
                 >
-                  <div className="font-heading font-extrabold">週{d}</div>
+                  <div className="font-extrabold">週{d}</div>
                   <div
                     className={`font-mono text-[10px] font-bold ${
                       showToday && i === todayIdx
@@ -255,7 +256,7 @@ export function TimetableApp({
                   className="mt-1.5 grid grid-cols-[86px_repeat(5,minmax(0,1fr))] gap-1.5"
                 >
                   <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-foreground/30 bg-secondary px-1 py-1.5">
-                    <span className="font-heading text-xs font-extrabold text-foreground">
+                    <span className="text-xs font-extrabold text-foreground">
                       第{p}節
                     </span>
                     <span className="font-mono text-[9px] font-bold text-muted-foreground">
@@ -283,7 +284,7 @@ export function TimetableApp({
                               key={item.name}
                               className={`course-chip mb-1 rounded-lg border-2 border-foreground px-1.5 py-1 last:mb-0 tone-${tone}`}
                               style={{
-                                backgroundColor: `var(--tone-${tone}-card)`,
+                                backgroundColor: `var(--color-tone-${tone}-bg)`,
                                 borderLeftWidth: 4,
                               }}
                               title={`${item.name} @ ${item.location}`}
@@ -360,7 +361,7 @@ function IconButton({
       title={title}
       aria-label={title}
       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-foreground text-foreground shadow-[2px_2px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[1px_1px_0_0_var(--color-foreground)]`}
-      style={{ backgroundColor: `var(--tone-${tone}-badge)` }}
+      style={{ backgroundColor: `var(--color-tone-${tone}-badge)` }}
     >
       {children}
     </button>

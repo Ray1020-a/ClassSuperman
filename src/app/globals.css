@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@import "tpass-ui/theme.css";
+@source "../../node_modules/tpass-ui/dist";
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Service tone utilities */
+.tone-green { background-color: var(--color-tone-green-bg); }
+.tone-green .course-name { color: var(--color-tone-green-text); }
+.tone-green.course-chip { border-left-color: var(--color-tone-green-badge); }
+
+.tone-blue { background-color: var(--color-tone-blue-bg); }
+.tone-blue .course-name { color: var(--color-tone-blue-text); }
+.tone-blue.course-chip { border-left-color: var(--color-tone-blue-badge); }
+
+.tone-orange { background-color: var(--color-tone-orange-bg); }
+.tone-orange .course-name { color: var(--color-tone-orange-text); }
+.tone-orange.course-chip { border-left-color: var(--color-tone-orange-badge); }
+
+.tone-violet { background-color: var(--color-tone-violet-bg); }
+.tone-violet .course-name { color: var(--color-tone-violet-text); }
+.tone-violet.course-chip { border-left-color: var(--color-tone-violet-badge); }
+
+.tone-rose { background-color: var(--color-tone-rose-bg); }
+.tone-rose .course-name { color: var(--color-tone-rose-text); }
+.tone-rose.course-chip { border-left-color: var(--color-tone-rose-badge); }
+
+/* Hero dotted grid */
+.hero-dots {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -10;
+  opacity: 0.5;
+  background-image: radial-gradient(
+    color-mix(in oklch, var(--color-foreground) 16%, transparent) 1.4px,
+    transparent 1.4px
+  );
+  background-size: 22px 22px;
+  mask-image: radial-gradient(75% 65% at 50% 0%, black, transparent);
+}

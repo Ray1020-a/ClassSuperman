@@ -55,7 +55,7 @@ export function LeaderboardModal({
             <button
               key={g}
               onClick={() => setGrade(g)}
-              className={`rounded-xl border-2 border-foreground px-3 py-2 font-heading font-extrabold shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)] ${
+              className={`rounded-xl border-2 border-foreground px-3 py-2 font-extrabold shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)] ${
                 grade === g
                   ? "bg-primary text-primary-foreground"
                   : "bg-card text-foreground"
@@ -76,7 +76,7 @@ export function LeaderboardModal({
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`rounded-xl border-2 border-foreground px-3 py-2 font-heading font-extrabold shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)] ${
+              className={`rounded-xl border-2 border-foreground px-3 py-2 font-extrabold shadow-[3px_3px_0_0_var(--color-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-foreground)] active:translate-y-0 active:shadow-[2px_2px_0_0_var(--color-foreground)] ${
                 tab === key
                   ? "bg-primary text-primary-foreground"
                   : "bg-card text-foreground"
@@ -94,19 +94,19 @@ export function LeaderboardModal({
               <li
                 key={row.id}
                 className={`flex items-center gap-3 rounded-xl border-2 border-foreground bg-card p-3 shadow-[3px_3px_0_0_var(--color-foreground)]`}
-                style={{ backgroundColor: `var(--tone-${tone}-card)` }}
+                style={{ backgroundColor: `var(--color-tone-${tone}-bg)` }}
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 border-foreground bg-card shadow-[1px_1px_0_0_var(--color-foreground)]">
                   {rankIcon(i)}
                 </span>
-                <span className="min-w-0 flex-1 truncate font-heading font-extrabold text-foreground">
+                <span className="min-w-0 flex-1 truncate font-extrabold text-foreground">
                   {row.name}
                 </span>
                 <span
                   className="shrink-0 rounded-md border-2 border-foreground px-2 py-0.5 font-mono text-[11px] font-bold"
                   style={{
-                    backgroundColor: `var(--tone-${tone}-badge)`,
-                    color: `var(--tone-${tone}-text)`,
+                    backgroundColor: `var(--color-tone-${tone}-badge)`,
+                    color: `var(--color-tone-${tone}-text)`,
                   }}
                 >
                   {row.count} 節
