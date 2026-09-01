@@ -27,8 +27,8 @@ importers:
         specifier: github:tschoolsu/tpass-auth-js#v1.1.1
         version: https://codeload.github.com/tschoolsu/tpass-auth-js/tar.gz/a17a3efa16ebd02b86bdf6e3d26d0bec70bbace2(jose@6.2.10)(next@16.3.2(@babel/core@7.29.7)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))
       tpass-ui:
-        specifier: github:tschoolsu/tpass-ui#v1.0.0
-        version: https://codeload.github.com/tschoolsu/tpass-ui/tar.gz/aa60038184da821da8f7a022557906ebfcec120f(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: github:tschoolsu/tpass-ui#v1.0.1
+        version: https://codeload.github.com/tschoolsu/tpass-ui/tar.gz/c1b7d5746c99e49d8fcefbe3f7addfff197d6711(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -1896,9 +1896,9 @@ packages:
       next:
         optional: true
 
-  tpass-ui@https://codeload.github.com/tschoolsu/tpass-ui/tar.gz/aa60038184da821da8f7a022557906ebfcec120f:
-    resolution: {tarball: https://codeload.github.com/tschoolsu/tpass-ui/tar.gz/aa60038184da821da8f7a022557906ebfcec120f}
-    version: 1.0.0
+  tpass-ui@https://codeload.github.com/tschoolsu/tpass-ui/tar.gz/c1b7d5746c99e49d8fcefbe3f7addfff197d6711:
+    resolution: {tarball: https://codeload.github.com/tschoolsu/tpass-ui/tar.gz/c1b7d5746c99e49d8fcefbe3f7addfff197d6711}
+    version: 1.0.1
     peerDependencies:
       react: '>=19'
       react-dom: '>=19'
@@ -4028,7 +4028,7 @@ snapshots:
     optionalDependencies:
       next: 16.3.2(@babel/core@7.29.7)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
 
-  tpass-ui@https://codeload.github.com/tschoolsu/tpass-ui/tar.gz/aa60038184da821da8f7a022557906ebfcec120f(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+  tpass-ui@https://codeload.github.com/tschoolsu/tpass-ui/tar.gz/c1b7d5746c99e49d8fcefbe3f7addfff197d6711(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
