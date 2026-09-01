@@ -7,6 +7,7 @@ import { calendarConfig } from "@/config/calendar";
 import { syncStudentCalendar } from "./calendar-sync";
 
 const RETRY_BACKOFF_MS = 5 * 60_000; // 失敗後 5 分鐘再重排，避免對同一個壞掉的 grant 忙迴圈
+const STUCK_REPORT_INTERVAL_MS = 30 * 60_000; // 每 30 分鐘回報一次目前持續失敗的 grant，供 tpass logs 查看
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -75,6 +76,23 @@ async function processOne(): Promise<boolean> {
   return true;
 }
 
+/**
+ * 回報目前持續失敗的 grant（lastSyncError 非空）。每次重試失敗當下已經有一行 console.error，
+ * 但那會被淹沒在逐筆日誌裡，看不出「現在總共有幾個學生卡住」——這個函式定期印一行總表，
+ * 讓 `tpass logs schedule` 能一眼看到規模，不用另外開一支 admin 介面或加欄位。
+ */
+async function reportStuckGrants(): Promise<void> {
+  const stuck = await prisma.calendarGrant.findMany({
+    where: { lastSyncError: { not: null }, invalidatedAt: null },
+    select: { studentId: true, lastSyncError: true },
+  });
+  if (stuck.length === 0) return;
+  console.warn(
+    `[calendar-queue] ${stuck.length} 位學生的 Calendar 同步持續失敗：` +
+      stuck.map((g) => `${g.studentId}（${g.lastSyncError}）`).join("；"),
+  );
+}
+
 /** 啟動同步佇列 worker。跟 startScheduler() 一樣，在 instrumentation.ts 裡呼叫一次。 */
 export function startCalendarSyncWorker(): void {
   void (async () => {
@@ -86,4 +104,11 @@ export function startCalendarSyncWorker(): void {
       await sleep(didWork ? 200 : 5000);
     }
   })();
+
+  const reportTimer = setInterval(() => {
+    void reportStuckGrants().catch((err) =>
+      console.error("[calendar-queue] 回報卡住的 grant 失敗：", err),
+    );
+  }, STUCK_REPORT_INTERVAL_MS);
+  reportTimer.unref?.();
 }
