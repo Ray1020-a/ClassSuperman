@@ -49,8 +49,10 @@ export async function POST() {
     }
   }
 
-  await prisma.syncedEvent.deleteMany({ where: { studentId } });
-  await prisma.calendarGrant.delete({ where: { studentId } });
+  await prisma.$transaction([
+    prisma.syncedEvent.deleteMany({ where: { studentId } }),
+    prisma.calendarGrant.delete({ where: { studentId } }),
+  ]);
 
   return NextResponse.json({ ok: true });
 }

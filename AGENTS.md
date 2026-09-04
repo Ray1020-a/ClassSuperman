@@ -20,5 +20,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Google Calendar OAuth 是全生態唯一例外**：一般消費端不碰 OAuth，這裡為了寫學生自己的日曆才拿 `calendar.events` scope。refresh token 以 AES-256-GCM 加密（`src/lib/crypto.ts`，金鑰 `CALENDAR_TOKEN_KEY`）落地到 `CalendarGrant`；只用 `privateExtendedProperty=tschedule=1` 查自己寫的事件，永不列舉其他事件。界線見 `src/config/calendar.ts` 開頭，不要擴大。
 - 每日排程在 `src/lib/scheduler.ts`（`src/instrumentation.ts` 啟動）：抓課表 → diff → 把受影響且已連結的學生排入同步佇列。單一 instance（pm2 `instances:1`），排程、latest.json 寫入、佇列 worker 都不可多行程併發。
 - `data/*.json` 是狀態（學生名冊 `data/s<grade>.json` 手放、`data/class/s<grade>/latest.json` 排程產生），gitignored，runtime 讀檔。
-- 資料庫：Prisma（`prisma/schema.prisma`），schema 改動走 `prisma migrate dev`。⚠️ 目前釘 Prisma 6，2026-09-02 資料庫準則要求 Prisma 7，待升。
+- 資料庫：Prisma 7 + `@prisma/adapter-pg`（`prisma/schema.prisma` + `prisma.config.ts`），schema 改動走 `prisma migrate dev`，migration 一起 commit。`0_init` 是既有庫 baseline，主機首次部署前跑 `prisma migrate resolve --applied 0_init`。
 - UI import 自 `tpass-ui`，light-only Neobrutalism + OKLCH；不要手刻 primitives。

@@ -3,12 +3,12 @@
 // 服務只保留一套持久層，不要 SQLite + Postgres 兩份並存）。
 // CalendarGrant / SyncedEvent 是 Google Calendar 雙向同步用的（把課表寫進學生自己主日曆）。
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 /// ICS 訂閱 feed：學號 -> 固定不變的 uuid。唯讀查詢端點（/[uuid]、/api/json/[uuid]）

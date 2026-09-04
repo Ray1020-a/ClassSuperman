@@ -93,16 +93,23 @@ async function reportStuckGrants(): Promise<void> {
   );
 }
 
+let stopping = false;
+
 /** 啟動同步佇列 worker。跟 startScheduler() 一樣，在 instrumentation.ts 裡呼叫一次。 */
 export function startCalendarSyncWorker(): void {
   void (async () => {
     for (;;) {
+      if (stopping) break;
       const didWork = await processOne().catch((err) => {
         console.error("[calendar-queue] worker 迴圈發生未預期錯誤：", err);
         return false;
       });
+      if (stopping) break;
       await sleep(didWork ? 200 : 5000);
     }
+    await prisma.$disconnect().catch((err) =>
+      console.error("[calendar-queue] 關閉資料庫連線池失敗：", err),
+    );
   })();
 
   const reportTimer = setInterval(() => {
@@ -111,4 +118,14 @@ export function startCalendarSyncWorker(): void {
     );
   }, STUCK_REPORT_INTERVAL_MS);
   reportTimer.unref?.();
+
+  // pm2 reload/stop 送 SIGTERM（手動 Ctrl-C 送 SIGINT）：先讓迴圈自己停下來，
+  // 再收 timer、斷 Prisma 連線池，不要留著半個連線等 pm2 逾時 SIGKILL。
+  const shutdown = (signal: NodeJS.Signals) => {
+    console.log(`[calendar-queue] 收到 ${signal}，停止 worker 迴圈`);
+    stopping = true;
+    clearInterval(reportTimer);
+  };
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
 }

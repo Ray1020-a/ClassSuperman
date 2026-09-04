@@ -30,7 +30,11 @@ pnpm dev                         # https://schedule.lvh.me:3010（已內建 HTTP
 
 ## 資料庫
 
-Prisma + PostgreSQL（`prisma/schema.prisma`，`prisma migrate dev`）。目前釘 Prisma 6，待升 Prisma 7。
+**Prisma 7 + PostgreSQL + migrations**（`@prisma/adapter-pg`）。schema 在 `prisma/schema.prisma`，
+連線設定在 `prisma.config.ts`（Prisma 7 的 CLI 不再自己讀 `.env`）。schema 變更走
+`pnpm exec prisma migrate dev --name <說明>`，migration 檔一起 commit；正式機由 `tpass deploy schedule`
+跑 `prisma migrate deploy`。`0_init` 是既有資料庫的 baseline——主機上首次部署前要先跑
+`pnpm exec prisma migrate resolve --applied 0_init` 標記一次（跟 meeting 一樣），不重跑。
 
 ## 設計要點
 
